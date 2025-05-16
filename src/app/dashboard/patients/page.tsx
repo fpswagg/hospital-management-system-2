@@ -33,6 +33,7 @@ export default function PatientsPage() {
                     keyName: 'age',
                     type: 'number',
                     defaultValue: 21,
+                    min: 0,
                     placeholder: 'Enter an age.',
                     required: true,
                 },

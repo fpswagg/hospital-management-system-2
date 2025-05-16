@@ -17,6 +17,7 @@ import type { ElementField } from '~/lib/types';
 export interface EditorPropsType {
     title: string;
     apiRoute?: string;
+    entityData?: Record<string, [string, string][]>;
     element: any;
     setElement: (element: any) => void;
     fetchElement: () => Promise<void>;
@@ -27,6 +28,7 @@ export interface EditorPropsType {
 export default function EditorPage({
     title,
     apiRoute = `${title.toLowerCase()}s`,
+    entityData: _entityData,
     element,
     setElement,
     fetchElement: _fetchElement,
@@ -34,7 +36,10 @@ export default function EditorPage({
     id,
 }: EditorPropsType) {
     const router = useRouter();
-    const [error, setError] = useState(false);
+    const [error, setError] = useState<string | boolean>(false);
+    const [entityData, setEntityData] = useState<
+        Record<string, [string, string][]>
+    >(_entityData ?? {});
     const { load } = LoadingData();
 
     const fetchElement = (callback?: (error?: any) => void | boolean) => {
@@ -52,13 +57,32 @@ export default function EditorPage({
                     const result = callback(error);
                     if (result) return;
                 }
-                setError(true);
+                setError(`Failed to fetch ${title}`);
             },
         })();
     };
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(fetchElement, []);
+
+    useEffect(function () {
+        const __entityData = {} as Record<string, [string, string][]>;
+
+        void Promise.all(
+            elementFields
+                .filter((f) => f.type === 'entity')
+                .map(async function (field) {
+                    const res = await fetch(`/api/${field.entity}s`);
+                    const data = (await res.json()) as any[];
+
+                    __entityData[field.entity] = data.map((elt) => [
+                        elt.id,
+                        elt[field.labelField ?? 'name'],
+                    ]);
+                })
+        ).then(() => setEntityData(__entityData));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const handleUpdate = load(
         () =>
@@ -75,9 +99,9 @@ export default function EditorPage({
                             !error && router.push(`/dashboard/${apiRoute}`)
                     );
                     setError(false);
-                } else setError(true);
+                } else setError('Failed to update');
             },
-            catch: () => setError(true),
+            catch: () => setError('Failed to update'),
         }
     );
 
@@ -96,7 +120,7 @@ export default function EditorPage({
 
                 {error && (
                     <h1 className="text-red-500 opacity-90 text-center cursor-default">
-                        An Error Occurred!
+                        {error || 'An Error Occurred!'}
                     </h1>
                 )}
 
@@ -115,7 +139,56 @@ export default function EditorPage({
                             }}
                         >
                             {elementFields.map((field, index) =>
-                                field.type === 'choice' ? (
+                                field.type === 'entity' ? (
+                                    <div
+                                        className="flex flex-col space-y-2"
+                                        key={index}
+                                    >
+                                        <Label htmlFor={field.keyName}>
+                                            {field.name}
+                                        </Label>
+                                        <select
+                                            id={field.keyName}
+                                            value={String(
+                                                getField(field.keyName) ?? ''
+                                            )}
+                                            onChange={(e) =>
+                                                setField(
+                                                    field.keyName,
+                                                    e.target.value || undefined
+                                                )
+                                            }
+                                            required={!!field.required}
+                                            className="border rounded px-3 py-2 appearance-none cursor-pointer"
+                                            disabled={
+                                                !entityData[field.entity] ||
+                                                entityData[field.entity]!
+                                                    .length === 0
+                                            }
+                                        >
+                                            {field.placeholder && (
+                                                <option value="">
+                                                    {field.placeholder}
+                                                </option>
+                                            )}
+                                            {(!entityData[field.entity] ||
+                                                entityData[field.entity]!
+                                                    .length === 0) && (
+                                                <option value="">...</option>
+                                            )}
+                                            {(
+                                                entityData[field.entity] ?? []
+                                            ).map(([choice, label]) => (
+                                                <option
+                                                    value={choice}
+                                                    key={choice}
+                                                >
+                                                    {label}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                ) : field.type === 'choice' ? (
                                     <div
                                         className="flex flex-col space-y-2"
                                         key={index}
@@ -176,6 +249,84 @@ export default function EditorPage({
                                             className="cursor-pointer"
                                         />
                                     </div>
+                                ) : field.type === 'date' ||
+                                  field.type === 'datetime' ||
+                                  field.type === 'time' ? (
+                                    <div
+                                        className="flex flex-col space-y-2"
+                                        key={index}
+                                    >
+                                        <Label htmlFor={field.keyName}>
+                                            {field.name}
+                                        </Label>
+                                        <input
+                                            id={field.keyName}
+                                            value={(() => {
+                                                const local = new Date(
+                                                    (getField(field.keyName) as
+                                                        | string
+                                                        | undefined) ??
+                                                        Date.now()
+                                                );
+                                                const offset =
+                                                    local.getTimezoneOffset();
+                                                const localAdjusted = new Date(
+                                                    local.getTime() -
+                                                        offset * 60000
+                                                );
+                                                if (field.type === 'datetime')
+                                                    return localAdjusted
+                                                        .toISOString()
+                                                        .slice(0, 16);
+                                                else if (field.type === 'date')
+                                                    return localAdjusted
+                                                        .toISOString()
+                                                        .slice(0, 10);
+                                                else
+                                                    return localAdjusted
+                                                        .toISOString()
+                                                        .slice(11, 16);
+                                            })()}
+                                            onChange={(e) => {
+                                                const value = e.target.value;
+
+                                                setField(
+                                                    field.keyName,
+                                                    value !== ''
+                                                        ? new Date(
+                                                              field.type ===
+                                                              'date'
+                                                                  ? `${value}T00:00`
+                                                                  : field.type ===
+                                                                      'time'
+                                                                    ? `${new Date(0).toISOString().slice(0, 10)}T${value}`
+                                                                    : value
+                                                          ).toISOString()
+                                                        : undefined
+                                                );
+                                            }}
+                                            placeholder={field.placeholder}
+                                            required={!!field.required}
+                                            type={
+                                                field.type === 'datetime'
+                                                    ? 'datetime-local'
+                                                    : field.type
+                                            }
+                                            className="border rounded px-3 py-2 appearance-none cursor-pointer"
+                                            min={
+                                                'min' in field &&
+                                                field.min !== undefined
+                                                    ? String(field.min)
+                                                    : undefined
+                                            }
+                                            max={
+                                                'max' in field &&
+                                                field.max !== undefined
+                                                    ? String(field.max)
+                                                    : undefined
+                                            }
+                                        />
+                                    </div>
                                 ) : (
                                     <div
                                         className="flex flex-col space-y-2"
@@ -202,8 +353,10 @@ export default function EditorPage({
                                                 )
                                                     setField(
                                                         field.keyName,
-                                                        field.type ===
-                                                            'number' &&
+                                                        (field.type ===
+                                                            'number' ||
+                                                            field.type ===
+                                                                'float') &&
                                                             value !== ''
                                                             ? Number(value)
                                                             : value || undefined
@@ -212,15 +365,32 @@ export default function EditorPage({
                                             placeholder={field.placeholder}
                                             required={!!field.required}
                                             type={
-                                                field.type === 'string'
-                                                    ? 'text'
-                                                    : field.type === 'phone'
-                                                      ? 'text'
-                                                      : field.type === 'number'
-                                                        ? 'number'
-                                                        : field.type === 'email'
-                                                          ? 'email'
-                                                          : 'text'
+                                                field.type === 'number' ||
+                                                field.type === 'float'
+                                                    ? 'number'
+                                                    : field.type === 'email'
+                                                      ? 'email'
+                                                      : 'text'
+                                            }
+                                            step={
+                                                'step' in field &&
+                                                field.step !== undefined
+                                                    ? String(field.step)
+                                                    : field.type === 'float'
+                                                      ? '0.01'
+                                                      : undefined
+                                            }
+                                            min={
+                                                'min' in field &&
+                                                field.min !== undefined
+                                                    ? String(field.min)
+                                                    : undefined
+                                            }
+                                            max={
+                                                'max' in field &&
+                                                field.max !== undefined
+                                                    ? String(field.max)
+                                                    : undefined
                                             }
                                         />
                                     </div>

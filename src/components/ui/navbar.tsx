@@ -16,8 +16,10 @@ import {
 import { LoadingData } from '~/contexts/loading';
 import { AuthData } from '~/contexts/auth';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function Navbar() {
+    const router = useRouter();
     const { user, supabase } = AuthData();
     const { load } = LoadingData();
 
@@ -25,6 +27,7 @@ export default function Navbar() {
         const { error } = await supabase.auth.signOut();
 
         if (error) throw error;
+        else router.push('/login');
     });
 
     if (user)

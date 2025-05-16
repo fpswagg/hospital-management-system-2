@@ -30,7 +30,7 @@ export default function ProfilePage() {
                     <Button
                         onClick={handleLogout}
                         variant="destructive"
-                        className="cursor-pointer"
+                        className="cursor-pointer mt-4"
                     >
                         Log Out
                     </Button>
