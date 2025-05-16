@@ -37,6 +37,11 @@ export default function Navbar() {
                     Kerry&apos;s Tool
                 </Link>
                 <nav className="flex items-center justify-evenly mx-4">
+                    <Link href="/">
+                        <Button variant="ghost" className="cursor-pointer">
+                            Home
+                        </Button>
+                    </Link>
                     <Link href="/dashboard">
                         <Button variant="ghost" className="cursor-pointer">
                             Dashboard
@@ -45,11 +50,6 @@ export default function Navbar() {
                     <Link href="/about">
                         <Button variant="ghost" className="cursor-pointer">
                             About
-                        </Button>
-                    </Link>
-                    <Link href="/contact">
-                        <Button variant="ghost" className="cursor-pointer">
-                            Contact
                         </Button>
                     </Link>
                     <DropdownMenu>
@@ -95,11 +95,6 @@ export default function Navbar() {
                     <Link href="/about">
                         <Button variant="ghost" className="cursor-pointer">
                             About
-                        </Button>
-                    </Link>
-                    <Link href="/contact">
-                        <Button variant="ghost" className="cursor-pointer">
-                            Contact
                         </Button>
                     </Link>
                     <Link href="/login">
