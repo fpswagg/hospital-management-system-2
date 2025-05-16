@@ -4,8 +4,6 @@ import { useState } from 'react';
 import DashboardContent from '~/components/ui/dashboard-content';
 import type { Billing } from '@prisma/client';
 
-export const currency = 'USD';
-
 export default function BillingsPage() {
     const [billings, setBillings] = useState<Billing[]>([]);
 
@@ -56,7 +54,7 @@ export default function BillingsPage() {
                     entityData.patient?.find(
                         ([id]) => id == billing.patientId
                     )?.[1] ?? 'Loading Patient..',
-                    `${String(billing.amount)} ${currency}`,
+                    `${String(billing.amount)} FCFA`,
                     billing.status,
                 ];
             }}
