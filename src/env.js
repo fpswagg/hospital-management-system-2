@@ -1,5 +1,5 @@
 import { createEnv } from '@t3-oss/env-nextjs';
-import { z } from 'zod';
+import { string, z } from 'zod';
 
 export const env = createEnv({
     /**
@@ -20,6 +20,7 @@ export const env = createEnv({
      * `NEXT_PUBLIC_`.
      */
     client: {
+        NEXT_PUBLIC_APP_URL: z.string(),
         NEXT_PUBLIC_SUPABASE_URL: z.string(),
         NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string(),
     },
@@ -31,6 +32,7 @@ export const env = createEnv({
     runtimeEnv: {
         DATABASE_URL: process.env.DATABASE_URL,
         ADMIN_PASSWORD: process.env.ADMIN_PASSWORD,
+        NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
         NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
         NEXT_PUBLIC_SUPABASE_ANON_KEY:
             process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,

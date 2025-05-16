@@ -8,7 +8,7 @@ export default function ConfirmEmail() {
     const searchParams = useSearchParams();
 
     const error = searchParams.get('error');
-    const error_code = searchParams.get('error_code');
+    // const error_code = searchParams.get('error_code');
     const error_description = searchParams.get('error_description');
 
     // error: access_denied
